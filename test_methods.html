@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Test 15 méthodes Discord</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1a0b2e; color: #f0f4f8; font-family: monospace; padding: 30px; }
+        h1 { color: #d4af37; margin-bottom: 30px; font-size: 1.5rem; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px; }
+        .method { background: rgba(255,255,255,.05); border: 1px solid rgba(212,175,55,.2); border-radius: 12px; padding: 20px; }
+        .method h3 { color: #d4af37; margin-bottom: 10px; font-size: .9rem; }
+        .method p { color: #94a3b8; font-size: .75rem; margin-bottom: 12px; }
+        button { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: .8rem; font-weight: 700; background: linear-gradient(135deg, #8a2be2, #d4af37); color: #fff; width: 100%; }
+        button:hover { opacity: .85; }
+        .result { margin-top: 10px; font-size: .75rem; padding: 6px 10px; border-radius: 6px; display: none; }
+        .result.ok { background: rgba(34,197,94,.15); border: 1px solid rgba(34,197,94,.4); color: #6ee7b7; display: block; }
+        .result.fail { background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.4); color: #fca5a5; display: block; }
+        .result.pending { background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.3); color: #fcd34d; display: block; }
+        #global-test { background: linear-gradient(135deg, #8a2be2, #d4af37); border: none; border-radius: 12px; padding: 15px 40px; color: #fff; font-size: 1rem; font-weight: 700; cursor: pointer; margin-bottom: 30px; }
+        #global-test:hover { opacity: .85; }
+        #winner { margin-top: 30px; padding: 20px; background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.4); border-radius: 14px; color: #6ee7b7; display: none; font-size: 1rem; }
+    </style>
+</head>
+<body>
+
+<h1>🔬 Test 15 méthodes d'envoi vers Discord</h1>
+<button id="global-test" onclick="testAll()">▶ Tester toutes les méthodes</button>
+
+<div class="grid" id="grid"></div>
+<div id="winner"></div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────
+const WEBHOOK_ID   = "1440019528879964351/svz1nHZeoP62ObtO7gEHgel_YASZMGwpOlHli4WxyENBdS_ytvZY0MyOVFY6zX_JEIWI";
+const BASE         = `https://discord.com/api/webhooks/${WEBHOOK_ID}`;
+const BASE_CANARY  = `https://canary.discord.com/api/webhooks/${WEBHOOK_ID}`;
+const BASE_PTB     = `https://ptb.discord.com/api/webhooks/${WEBHOOK_ID}`;
+const PROXY1       = `https://corsproxy.io/?${encodeURIComponent(BASE)}`;
+const PROXY2       = `https://api.allorigins.win/raw?url=${encodeURIComponent(BASE)}`;
+const PROXY3       = `https://cors-anywhere.herokuapp.com/${BASE}`;
+const PROXY4       = `https://thingproxy.freeboard.io/fetch/${BASE}`;
+const PROXY5       = `https://cors.bridged.cc/${BASE}`;
+
+const PAYLOAD = {
+    embeds: [{
+        title: "🧪 Test méthode",
+        description: "Test d'envoi depuis le site web",
+        color: 0x9B59B6,
+        fields: [{ name: "📅 Date", value: new Date().toLocaleString('fr-FR'), inline: true }],
+        timestamp: new Date().toISOString()
+    }]
+};
+
+const methods = [
+    {
+        id: 1,
+        name: "Méthode 1 — fetch direct discord.com",
+        desc: "POST direct vers discord.com sans proxy",
+        fn: async () => {
+            const r = await fetch(BASE, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...PAYLOAD, embeds:[{...PAYLOAD.embeds[0], title:"🧪 Test #1 — fetch direct discord.com"}]}) });
+            return r.ok || r.status === 204;
+        }
+    },
+    {
+        id: 2,
+        name: "Méthode 2 — fetch canary.discord.com",
+        desc: "POST via le endpoint canary",
+        fn: async () => {
+            const r = await fetch(BASE_CANARY, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...PAYLOAD, embeds:[{...PAYLOAD.embeds[0], title:"🧪 Test #2 — canary.discord.com"}]}) });
+            return r.ok || r.status === 204;
+        }
+    },
+    {
+        id: 3,
+        name: "Méthode 3 — fetch ptb.discord.com",
+        desc: "POST via le endpoint PTB",
+        fn: async () => {
+            const r = await fetch(BASE_PTB, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...PAYLOAD, embeds:[{...PAYLOAD.embeds[0], title:"🧪 Test #3 — ptb.discord.com"}]}) });
+            return r.ok || r.status === 204;
+        }
+    },
+    {
+        id: 4,
+        name: "Méthode 4 — corsproxy.io",
+        desc: "Proxy CORS via corsproxy.io",
+        fn: async () => {
+            const r = await fetch(PROXY1, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...PAYLOAD, embeds:[{...PAYLOAD.embeds[0], title:"🧪 Test #4 — corsproxy.io"}]}) });
+            return r.ok || r.status === 204;
+        }
+    },
+    {
+        id: 5,
+        name: "Méthode 5 — allorigins.win",
+        desc: "Proxy via allorigins.win/raw",
+        fn: async () => {
+            const r = await fetch(PROXY2, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...PAYLOAD, embeds:[{...PAYLOAD.embeds[0], title:"🧪 Test #5 — allorigins.win"}]}) });
+            return r.ok || r.status === 204;
+        }
+    },
+    {
+        id: 6,
+        name: "Méthode 6 — cors-anywhere",
+        desc: "Proxy via cors-anywhere.herokuapp.com",
+        fn: async () => {
+            const r = await fetch(PROXY3, { method:'POST', headers:{'Content-Type':'application/json', 'X-Requested-With':'XMLHttpRequest'}, body: JSON.stringify({...PAYLOAD, embeds:[{...PAYLOAD.embeds[0], title:"🧪 Test #6 — cors-anywhere"}]}) });
+            return r.ok || r.status === 204;
+        }
+    },
+    {
+        id: 7,
+        name: "Méthode 7 — thingproxy",
+        desc: "Proxy via thingproxy.freeboard.io",
+        fn: async () => {
+            const r = await fetch(PROXY4, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...PAYLOAD, embeds:[{...PAYLOAD.embeds[0], title:"🧪 Test #7 — thingproxy"}]}) });
+            return r.ok || r.status === 204;
+        }
+    },
+    {
+        id: 8,
+        name: "Méthode 8 — cors.bridged.cc",
+        desc: "Proxy via cors.bridged.cc",
+        fn: async () => {
+            const r = await fetch(PROXY5, { method:'POST', headers:{'Content-Type':'application/json', 'x-cors-api-key':'temp_'}, body: JSON.stringify({...PAYLOAD, embeds:[{...PAYLOAD.embeds[0], title:"🧪 Test #8 — cors.bridged.cc"}]}) });
+            return r.ok || r.status === 204;
+        }
+    },
+    {
+        id: 9,
+        name: "Méthode 9 — XMLHttpRequest direct",
+        desc: "XHR classique vers discord.com",
+        fn: () => new Promise((res) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', BASE, true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onload = () => res(xhr.status === 200 || xhr.status === 204);
+            xhr.onerror = () => res(false);
+            xhr.send(JSON.stringify({...PAYLOAD, embeds:[{...PAYLOAD.embeds[0], title:"🧪 Test #9 — XHR direct"}]}));
+        })
+    },
+    {
+        id: 10,
+        name: "Méthode 10 — fetch + no-cors mode",
+        desc: "fetch avec mode no-cors (opaque response)",
+        fn: async () => {
+            try {
+                await fetch(BASE, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...PAYLOAD, embeds:[{...PAYLOAD.embeds[0], title:"🧪 Test #10 — no-cors mode"}]}) });
+                return true; // no-cors = toujours opaque, on suppose OK
+            } catch(e) { return false; }
+        }
+    },
+    {
+        id: 11,
+        name: "Méthode 11 — sendBeacon",
+        desc: "navigator.sendBeacon vers discord.com",
+        fn: async () => {
+            try {
+                const blob = new Blob([JSON.stringify({...PAYLOAD, embeds:[{...PAYLOAD.embeds[0], title:"🧪 Test #11 — sendBeacon"}]})], {type:'application/json'});
+                return navigator.sendBeacon(BASE, blob);
+            } catch(e) { return false; }
+        }
+    },
+    {
+        id: 12,
+        name: "Méthode 12 — corsproxy.io (encode complet)",
+        desc: "corsproxy.io avec URL complète encodée",
+        fn: async () => {
+            const url = `https://corsproxy.io/?url=${encodeURIComponent(BASE)}`;
+            const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...PAYLOAD, embeds:[{...PAYLOAD.embeds[0], title:"🧪 Test #12 — corsproxy ?url="}]}) });
+            return r.ok || r.status === 204;
+        }
+    },
+    {
+        id: 13,
+        name: "Méthode 13 — api.codetabs.com proxy",
+        desc: "Proxy via codetabs.com",
+        fn: async () => {
+            const url = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(BASE)}`;
+            const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...PAYLOAD, embeds:[{...PAYLOAD.embeds[0], title:"🧪 Test #13 — codetabs proxy"}]}) });
+            return r.ok || r.status === 204;
+        }
+    },
+    {
+        id: 14,
+        name: "Méthode 14 — Multiproxy (essaie tout)",
+        desc: "Essaie discord → canary → ptb l'un après l'autre",
+        fn: async () => {
+            for (const url of [BASE, BASE_CANARY, BASE_PTB]) {
+                try {
+                    const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...PAYLOAD, embeds:[{...PAYLOAD.embeds[0], title:"🧪 Test #14 — Multiproxy"}]}) });
+                    if (r.ok || r.status === 204) return true;
+                } catch(e) {}
+            }
+            return false;
+        }
+    },
+    {
+        id: 15,
+        name: "Méthode 15 — fetch + keepalive",
+        desc: "fetch avec option keepalive:true",
+        fn: async () => {
+            const r = await fetch(BASE, { method:'POST', keepalive: true, headers:{'Content-Type':'application/json'}, body: JSON.stringify({...PAYLOAD, embeds:[{...PAYLOAD.embeds[0], title:"🧪 Test #15 — keepalive"}]}) });
+            return r.ok || r.status === 204;
+        }
+    }
+];
+
+// ─── RENDER ────────────────────────────────────────────────
+const grid = document.getElementById('grid');
+methods.forEach(m => {
+    grid.innerHTML += `
+    <div class="method" id="card-${m.id}">
+        <h3>#${m.id} — ${m.name.split('—')[1]?.trim() || m.name}</h3>
+        <p>${m.desc}</p>
+        <button onclick="testOne(${m.id})">Tester</button>
+        <div class="result" id="res-${m.id}"></div>
+    </div>`;
+});
+
+async function testOne(id) {
+    const m = methods.find(x => x.id === id);
+    const resEl = document.getElementById(`res-${id}`);
+    resEl.className = 'result pending';
+    resEl.textContent = '⏳ En cours...';
+    try {
+        const ok = await Promise.race([m.fn(), new Promise(r => setTimeout(() => r(false), 8000))]);
+        resEl.className = ok ? 'result ok' : 'result fail';
+        resEl.textContent = ok ? '✅ SUCCÈS — Message envoyé !' : '❌ ÉCHEC';
+    } catch(e) {
+        resEl.className = 'result fail';
+        resEl.textContent = `❌ Erreur : ${e.message}`;
+    }
+}
+
+async function testAll() {
+    const btn = document.getElementById('global-test');
+    btn.textContent = '⏳ Tests en cours...';
+    btn.disabled = true;
+    const winners = [];
+    for (const m of methods) {
+        await testOne(m.id);
+        await new Promise(r => setTimeout(r, 600));
+        const resEl = document.getElementById(`res-${m.id}`);
+        if (resEl.classList.contains('ok')) winners.push(m);
+    }
+    btn.textContent = '✅ Tests terminés !';
+    btn.disabled = false;
+    const winnerEl = document.getElementById('winner');
+    if (winners.length > 0) {
+        winnerEl.style.display = 'block';
+        winnerEl.innerHTML = `🏆 <strong>${winners.length} méthode(s) fonctionnelle(s) :</strong><br>${winners.map(w => `• #${w.id} — ${w.name}`).join('<br>')}`;
+    } else {
+        winnerEl.style.display = 'block';
+        winnerEl.style.borderColor = 'rgba(239,68,68,.4)';
+        winnerEl.style.background = 'rgba(239,68,68,.1)';
+        winnerEl.style.color = '#fca5a5';
+        winnerEl.innerHTML = '❌ Aucune méthode n\'a fonctionné. Vérifie le webhook ID ou utilise un backend serveur.';
+    }
+}
+</script>
+</body>
+</html>
